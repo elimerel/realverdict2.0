@@ -1,0 +1,17 @@
+{
+  "name": "RealVerdict",
+  "short_name": "RealVerdict",
+  "description": "Rental deal screener — cashflow, cap rate, IRR, stress tests. Configurable screening; for triage, not a substitute for diligence.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f0f0f6",
+  "theme_color": "#0db050",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
