@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --input-type=module)",
+      "Bash(node -e ' *)",
+      "Bash(python3 -c ' *)",
+      "mcp__Claude_Preview__preview_start",
+      "Read(//Users/elishamerel/.nvm/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(php --version)",
+      "Bash(head -c 161012 /Users/elishamerel/Documents/RealVerdictFolder/styles.css)",
+      "Read(//tmp/**)",
+      "Bash(python3 -m http.server 5173)",
+      "Bash(npx --yes serve /Users/elishamerel/Documents/RealVerdictFolder -p 5173 -l)",
+      "Bash(curl -s http://localhost:5173/)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(npx --version)",
+      "Read(//usr/bin/**)",
+      "Bash(python3 -c \"import http.server; print\\('ok'\\)\")",
+      "Bash(python3 -c \"import os, http.server, socketserver; os.chdir\\('/Users/elishamerel/Documents/RealVerdictFolder'\\); PORT=5173; Handler=http.server.SimpleHTTPRequestHandler; httpd=socketserver.TCPServer\\(\\('', PORT\\), Handler\\); print\\('ok'\\)\")",
+      "Bash(cat)",
+      "Bash(chmod +x /tmp/rv_serve.sh)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(curl -v http://localhost:5173/)",
+      "Bash(kill 5065)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(PORT=8787 python3 /tmp/rv_server2.py)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8787/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:9191/)",
+      "Bash(curl -v http://localhost:9191/)",
+      "Bash(ln -sf /Users/elishamerel/Documents/RealVerdictFolder /tmp/rv_app)"
+    ]
+  }
+}

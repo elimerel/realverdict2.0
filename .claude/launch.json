@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "RealVerdict",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["/tmp/rv_server4.py"],
+      "port": 9191,
+      "autoPort": true
+    }
+  ]
+}

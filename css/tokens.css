@@ -1,0 +1,31 @@
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f0f0f6;--card:#fff;--card2:#f5f5fb;--card3:#eaeaf2;
+  --accent:#0db050;--accent2:#0a9444;--ag:rgba(13,176,80,.13);
+  --red:#e02020;--red2:#a01414;--rg:rgba(224,32,32,.10);
+  --yellow:#c47d00;--yellow2:#8a5600;--yg:rgba(196,125,0,.13);
+  --orange:#c44e00;--orange2:#8a3400;--og:rgba(196,78,0,.13);
+  --est:#5f73a3;--est-bg:color-mix(in srgb,#5f73a3 7%,var(--card2));
+  --text:#0c0c14;--muted:#63667a;--subtle:#a0a3b8;
+  --border:#dcdce8;--borders:#c8c8dc;
+  --ss:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.03);
+  --sm:0 4px 16px rgba(0,0,0,.07),0 1px 4px rgba(0,0,0,.04);
+  --sl:0 14px 44px rgba(0,0,0,.10),0 4px 12px rgba(0,0,0,.05);
+  --r:13px;--rl:18px;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --vc:var(--accent);--vc2:var(--accent2);--vc-soft:var(--ag)
+}
+[data-theme="dark"]{
+  --bg:#0d0d13;--card:#17171f;--card2:#1d1d27;--card3:#23232f;
+  --accent:#22d46a;--accent2:#1ab858;--ag:rgba(34,212,106,.14);
+  --red:#ff5050;--red2:#c02020;--rg:rgba(255,80,80,.12);
+  --yellow:#f0a000;--yellow2:#b07800;--yg:rgba(240,160,0,.14);
+  --orange:#f06800;--orange2:#b04800;--og:rgba(240,104,0,.14);
+  --est:#8a9cc8;--est-bg:color-mix(in srgb,#8a9cc8 9%,var(--card2));
+  --text:#eeeef8;--muted:#8080a0;--subtle:#46465e;
+  --border:#252538;--borders:#323248;
+  --ss:0 1px 4px rgba(0,0,0,.4);
+  --sm:0 4px 20px rgba(0,0,0,.5),0 1px 6px rgba(0,0,0,.3);
+  --sl:0 16px 50px rgba(0,0,0,.6),0 6px 16px rgba(0,0,0,.35)
+}
