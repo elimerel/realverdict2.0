@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RealVerdict — Rental investment analysis</title>
+  <meta name="description" content="RealVerdict: rental cashflow, yields, stress tests, and a buy/hold/walk verdict from your inputs. Runs locally in your browser.">
+  <meta name="theme-color" content="#0db050">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="RealVerdict">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='4' fill='%230db050'/><path d='M2 13V7l6-5 6 5v6H10V9H6v4Z' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/main.css">
+  <script src="vendor/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="hdr">
+    <div class="logo" onclick="goHome()">
+      <div class="logo-icon">
+        <svg viewBox="0 0 16 16">
+          <path d="M2 13V7l6-5 6 5v6H10V9H6v4Z"/>
+        </svg>
+      </div>
+      <div class="logo-block">
+        <div class="logo-text"><span class="r">Real</span>Verdict</div>
+      </div>
+    </div>
+    <div class="tog" onclick="toggleTheme()">
+      <div class="to on" id="togL">☀</div>
+      <div class="to" id="togD">☾</div>
+    </div>
+  </div>
+  <div id="cft"></div>
+  <!-- Compact metrics bar — verdict + live key metrics + actions (chapter nav moved to side rail) -->
+  <div id="rvCompactBar" class="rv-compact-bar" aria-hidden="true">
+    <div class="rv-cb-accent" aria-hidden="true"></div>
+    <div class="rv-cb-inner">
+      <div class="rv-cb-verdict-group">
+        <div class="rv-cb-verdict" id="cpVerdict">—</div>
+      </div>
+      <div class="rv-cb-div"></div>
+      <div class="rv-cb-metrics">
+        <div class="rv-cb-m"><span class="rv-cb-ml">CF/mo</span><span class="rv-cb-mv" id="cpCF">—</span></div>
+        <div class="rv-cb-m"><span class="rv-cb-ml">Cap</span><span class="rv-cb-mv" id="cpCap">—</span></div>
+        <div class="rv-cb-m"><span class="rv-cb-ml">CoC</span><span class="rv-cb-mv" id="cpCoc">—</span></div>
+        <div class="rv-cb-m rv-cb-m--md"><span class="rv-cb-ml">DSCR</span><span class="rv-cb-mv" id="cpDscr">—</span></div>
+        <div class="rv-cb-m rv-cb-m--md"><span class="rv-cb-ml">IRR</span><span class="rv-cb-mv" id="cpIrr">—</span></div>
+      </div>
+      <div class="rv-cb-acts">
+        <button class="act-btn" onclick="goBack()">Edit</button>
+        <button class="act-btn" onclick="saveAnalysisPrompt()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side rail — 3 stacked segments that fill as you scroll each chapter -->
+  <aside id="rvRail" class="rv-rail" aria-label="Section navigation" aria-hidden="true">
+    <button type="button" class="rv-rail-seg is-active" data-part="1" onclick="scrollToPart(1)" aria-label="Overview">
+      <span class="rv-rail-num">01</span>
+      <span class="rv-rail-track"><span class="rv-rail-fill"></span></span>
+      <span class="rv-rail-lab">Overview</span>
+    </button>
+    <button type="button" class="rv-rail-seg" data-part="2" onclick="scrollToPart(2)" aria-label="Tune">
+      <span class="rv-rail-num">02</span>
+      <span class="rv-rail-track"><span class="rv-rail-fill"></span></span>
+      <span class="rv-rail-lab">Tune</span>
+    </button>
+    <button type="button" class="rv-rail-seg" data-part="3" onclick="scrollToPart(3)" aria-label="Outlook">
+      <span class="rv-rail-num">03</span>
+      <span class="rv-rail-track"><span class="rv-rail-fill"></span></span>
+      <span class="rv-rail-lab">Outlook</span>
+    </button>
+  </aside>
+  <div class="mover" id="pdfModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pdfModalTitle">
+      <h3 id="pdfModalTitle">Export PDF</h3>
+      <p>One compact page of numbers. Uses the current slider scenario.</p>
+      <input type="text" id="pdfProp" placeholder="Property name or address" maxlength="80">
+      <div class="modal-btns">
+        <button class="btn btn-g" style="padding:10px" onclick="closeModal('pdfModal')">Cancel</button>
+        <button class="btn btn-p" style="padding:10px" onclick="doPrint()">Export PDF</button>
+      </div>
+    </div>
+  </div>
+  <div class="mover" id="saveModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="saveModalTitle">
+      <h3 id="saveModalTitle">Save analysis</h3>
+      <p>Give this analysis a name to find it later.</p>
+      <input type="text" id="saveNameInp" placeholder="Property name or address" maxlength="80">
+      <div class="modal-btns">
+        <button class="btn btn-g" style="padding:10px" onclick="closeModal('saveModal')">Cancel</button>
+        <button class="btn btn-p" style="padding:10px" onclick="saveAnalysisConfirm()">Save</button>
+      </div>
+    </div>
+  </div>
+  <div class="mover" id="compareModal">
+    <div class="modal compare-modal" role="dialog" aria-modal="true" aria-labelledby="compareModalTitle">
+      <div class="compare-modal-head">
+        <h3 id="compareModalTitle">Compare Analyses</h3>
+        <button class="compare-close" onclick="closeModal('compareModal')" aria-label="Close">×</button>
+      </div>
+      <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px;line-height:1.5">Select two saved analyses to compare side by side.</p>
+      <div class="compare-selectors">
+        <select id="cmpSel1" class="ainp"></select>
+        <span class="cmp-vs">vs</span>
+        <select id="cmpSel2" class="ainp"></select>
+      </div>
+      <button class="btn btn-p" style="margin-top:12px;padding:10px" onclick="runCompare()">Compare →</button>
+      <div id="cmpResult"></div>
+    </div>
+  </div>
+  <div class="mover" id="fredModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="fredModalTitle">
+      <h3 id="fredModalTitle">Live mortgage rate</h3>
+      <p>Enter a free <a href="https://fred.stlouisfed.org/docs/api/api_key.html" target="_blank" rel="noopener" style="color:var(--accent)">FRED API key</a> to auto-fetch the current 30-yr rate on every visit.</p>
+      <input type="text" id="fredKeyInp" placeholder="Paste your FRED API key" maxlength="64" autocomplete="off">
+      <div class="modal-btns">
+        <button class="btn btn-g" style="padding:10px" onclick="closeModal('fredModal')">Cancel</button>
+        <button class="btn btn-p" style="padding:10px" onclick="saveFredKey()">Save &amp; fetch</button>
+      </div>
+    </div>
+  </div>
+  <div id="opening" class="screen active">
+    <div class="open-stage">
+      <div class="open-shell">
+        <div class="open-hero-stage">
+          <div class="open-hero-frost open-hero-frost--seamless">
+            <div class="open-hero open-hero--wide open-hero--frost" id="ohero">
+              <div class="open-hero-frost-copy">
+                <p class="open-brand-kicker"><span class="r">Real</span>Verdict</p>
+                <h1 class="open-headline">Analyze any rental deal in minutes</h1>
+                <p class="open-lede">Enter rent, costs, and loan terms. Get cashflow, key ratios, stress tests, and a buy / hold / walk verdict. Runs locally — your numbers never leave this device.</p>
+              </div>
+              <div class="open-hero-frost-cta">
+                <button type="button" class="open-cta" id="octa" onclick="startWizard()">Start analysis</button>
+                <p class="open-trust-line">Free · No account · Private on your device</p>
+              </div>
+            </div>
+          </div>
+          <div class="open-hero-bg open-hero-viz" id="openPreview" role="region" aria-label="Example rental metrics">
+            <div class="open-hero-viz-glow"></div>
+            <div class="open-hero-viz-slides">
+              <div class="open-hero-viz-panel is-active" data-caption="Returns at a glance" data-hero-panel>
+                <div class="open-hero-flow">
+                  <div class="open-hero-flow-row open-hero-flow-row--primary">
+                    <div class="open-hero-metric open-hero-metric--hero">
+                      <span class="open-hero-metric-lab">Monthly cashflow</span>
+                      <span class="open-hero-metric-val">+$1,398</span>
+                      <span class="open-hero-metric-hint">after debt &amp; reserves</span>
+                    </div>
+                  </div>
+                  <div class="open-hero-flow-row open-hero-flow-row--grid">
+                    <div class="open-hero-metric open-hero-metric--sm">
+                      <span class="open-hero-metric-lab">Cash-on-cash</span>
+                      <span class="open-hero-metric-val">11.2%</span>
+                    </div>
+                    <div class="open-hero-metric open-hero-metric--sm">
+                      <span class="open-hero-metric-lab">Cap rate</span>
+                      <span class="open-hero-metric-val">8.4%</span>
+                    </div>
+                    <div class="open-hero-metric open-hero-metric--sm">
+                      <span class="open-hero-metric-lab">DSCR</span>
+                      <span class="open-hero-metric-val">1.28×</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="open-hero-viz-panel" data-caption="Money in &amp; out" data-hero-panel>
+                <div class="open-hero-flow">
+                  <div class="open-hero-flow-row open-hero-flow-row--grid open-hero-flow-row--two">
+                    <div class="open-hero-metric">
+                      <span class="open-hero-metric-lab">Gross rent / mo</span>
+                      <span class="open-hero-metric-val">$9,200</span>
+                    </div>
+                    <div class="open-hero-metric">
+                      <span class="open-hero-metric-lab">Mortgage P&amp;I</span>
+                      <span class="open-hero-metric-val open-hero-metric-val--muted">−$3,410</span>
+                    </div>
+                  </div>
+                  <div class="open-hero-flow-row open-hero-flow-row--primary">
+                    <div class="open-hero-metric open-hero-metric--hero">
+                      <span class="open-hero-metric-lab">Net after ops &amp; vacancy</span>
+                      <span class="open-hero-metric-val">+$1,398</span>
+                      <span class="open-hero-metric-hint">what hits your pocket each month</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="open-hero-viz-panel" data-caption="If things get worse" data-hero-panel>
+                <div class="open-hero-flow">
+                  <div class="open-hero-flow-row open-hero-flow-row--grid open-hero-flow-row--stress">
+                    <div class="open-hero-metric open-hero-metric--sm open-hero-metric--hero">
+                      <span class="open-hero-metric-lab">−20% rent</span>
+                      <span class="open-hero-metric-val open-hero-metric-val--warn">−$180/mo</span>
+                    </div>
+                    <div class="open-hero-metric open-hero-metric--sm">
+                      <span class="open-hero-metric-lab">+2% rate</span>
+                      <span class="open-hero-metric-val open-hero-metric-val--warn">−$412/mo</span>
+                    </div>
+                  </div>
+                  <p class="open-hero-viz-panel-note">Adjust sliders in the app—these are example shocks.</p>
+                </div>
+              </div>
+              <div class="open-hero-viz-panel open-hero-viz-panel--verdict" data-caption="Plain verdict" data-hero-panel>
+                <div class="open-hero-verdict">
+                  <span class="open-hero-verdict-label">Strong Buy</span>
+                  <p class="open-hero-verdict-line">One line from your numbers—not investment advice.</p>
+                </div>
+              </div>
+            </div>
+            <div class="open-hero-viz-chrome">
+              <div class="open-hero-viz-caption-row">
+                <p class="open-hero-viz-caption" id="openHeroMetricsCaption">Returns at a glance</p>
+                <span class="open-hero-viz-step" id="openHeroMetricsStep" aria-hidden="true">1 / 4</span>
+              </div>
+              <div class="open-hero-viz-controls" role="group" aria-label="Browse example metrics">
+                <div class="open-hero-viz-dots" id="openHeroMetricsDots" role="tablist" aria-label="Metric views"></div>
+              </div>
+            </div>
+            <p class="open-hero-viz-note">Illustrative sample · your inputs replace these</p>
+          </div>
+        </div>
+
+        <div class="open-after">
+          <div class="open-microtrust" aria-label="Trust">
+            <div class="open-mt-item">
+              <span class="open-mt-ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3l7 4v5c0 5-3 9-7 10-4-1-7-5-7-10V7l7-4z"/><path d="M9 12l2 2 4-4"/></svg></span>
+              <div class="open-mt-body"><strong>Private</strong><span>Runs locally — nothing uploaded</span></div>
+            </div>
+            <div class="open-mt-item">
+              <span class="open-mt-ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+              <div class="open-mt-body"><strong>Fast</strong><span>Minutes, not spreadsheets</span></div>
+            </div>
+            <div class="open-mt-item">
+              <span class="open-mt-ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 20h16M6 16V9M12 16V5M18 16v-4"/></svg></span>
+              <div class="open-mt-body"><strong>Practical</strong><span>Verdict + what-if sliders</span></div>
+            </div>
+            <div class="open-mt-item">
+              <span class="open-mt-ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v4l3 3"/></svg></span>
+              <div class="open-mt-body"><strong>Installable</strong><span>Add to home screen — works offline</span></div>
+            </div>
+          </div>
+
+          <section class="open-story open-story--grid" aria-label="Product walkthrough">
+            <div class="open-story-steps open-story-steps--grid">
+              <div class="open-story-step open-story-step--static">
+                <div class="open-story-kicker">Step 1</div>
+                <h2 class="open-story-h">Get a clean answer fast</h2>
+                <p class="open-story-p">Run a deal in minutes and see the numbers that matter on one dashboard.</p>
+                <div class="open-story-bul">
+                  <div><strong>Cashflow</strong> per month and year</div>
+                  <div><strong>Yields</strong> (cap, CoC) + <strong>coverage</strong> (DSCR)</div>
+                </div>
+              </div>
+              <div class="open-story-step open-story-step--static">
+                <div class="open-story-kicker">Step 2</div>
+                <h2 class="open-story-h">Understand the monthly breakdown</h2>
+                <p class="open-story-p">See the deal like an income statement so you can spot what’s driving performance.</p>
+                <div class="open-story-bul">
+                  <div><strong>Mortgage</strong>, taxes, insurance, vacancy</div>
+                  <div><strong>Net cashflow</strong> is always explicit</div>
+                </div>
+              </div>
+              <div class="open-story-step open-story-step--static">
+                <div class="open-story-kicker">Step 3</div>
+                <h2 class="open-story-h">Stress test the downside</h2>
+                <p class="open-story-p">Slide rates, rent, and vacancy to see how quickly the deal breaks.</p>
+                <div class="open-story-bul">
+                  <div><strong>Rate shock</strong> + vacancy spikes</div>
+                  <div><strong>Clear signals</strong> when it becomes risky</div>
+                </div>
+              </div>
+              <div class="open-story-step open-story-step--static">
+                <div class="open-story-kicker">Step 4</div>
+                <h2 class="open-story-h">Get a verdict you can act on</h2>
+                <p class="open-story-p">A buy / hold / walk read with next steps, based on the scenario you entered.</p>
+                <div class="open-story-bul">
+                  <div><strong>Plain English</strong> reasoning</div>
+                  <div><strong>Shareable</strong> PDF export</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="open-sec open-sec--bento" aria-label="Built for underwriting">
+            <div class="open-sec-head">
+              <h2 class="open-sec-title open-sec-title--plain">Built for underwriting</h2>
+              <p class="open-sec-lead">Everything you need to screen a rental quickly—without exporting to Excel.</p>
+            </div>
+            <div class="open-bento">
+              <div class="open-bento-card open-bento-card--wide">
+                <span class="open-bento-ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 20h16M6 16V9M12 16V5M18 16v-4"/></svg></span>
+                <div class="open-bento-t">Dashboard &amp; verdict</div>
+                <div class="open-bento-d">One screen for cashflow, yields, DSCR, IRR, and a buy / hold / walk read. Adjust the screening profile to match your market or risk appetite.</div>
+              </div>
+              <div class="open-bento-card">
+                <span class="open-bento-ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5M8 16h6"/></svg></span>
+                <div class="open-bento-t">Monthly breakdown</div>
+                <div class="open-bento-d">Income-statement style view of where the money goes.</div>
+              </div>
+              <div class="open-bento-card">
+                <span class="open-bento-ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 18h18M5 14l4-4 4 4 6-8"/><path d="M5 14v4h4"/></svg></span>
+                <div class="open-bento-t">Equity vs S&amp;P</div>
+                <div class="open-bento-d">Long-term context next to property equity.</div>
+              </div>
+              <div class="open-bento-card">
+                <span class="open-bento-ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v18M8 8h11M8 12h8M8 16h5"/></svg></span>
+                <div class="open-bento-t">Save &amp; compare</div>
+                <div class="open-bento-d">Keep analyses locally and compare two properties side by side.</div>
+              </div>
+              <div class="open-bento-card">
+                <span class="open-bento-ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M6 2h9l3 3v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v4h4"/></svg></span>
+                <div class="open-bento-t">PDF export</div>
+                <div class="open-bento-d">One compact page for notes or a lender packet.</div>
+              </div>
+              <div class="open-bento-card">
+                <span class="open-bento-ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></span>
+                <div class="open-bento-t">Screening profiles</div>
+                <div class="open-bento-d">Switch between Aggressive, Balanced, and Conservative yield thresholds to match your market.</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="open-sec open-sec--faq" aria-label="FAQ">
+            <div class="open-sec-head">
+              <h2 class="open-sec-title open-sec-title--plain">FAQ</h2>
+              <p class="open-sec-lead">Common questions — tap to expand.</p>
+            </div>
+            <div class="open-faq">
+              <details class="open-faq-item">
+                <summary>Does it upload my numbers anywhere?</summary>
+                <div class="open-faq-body">No. Every calculation runs in your browser. Saved analyses stay in your device’s local storage — nothing is sent to a server.</div>
+              </details>
+              <details class="open-faq-item">
+                <summary>Is this investment advice?</summary>
+                <div class="open-faq-body">No. RealVerdict is a calculator and screening tool. The verdict labels (Strong Buy, Pass, etc.) are outputs of a financial model, not recommendations. Always verify inputs and consult a professional before acting.</div>
+              </details>
+              <details class="open-faq-item">
+                <summary>What should I verify before trusting the numbers?</summary>
+                <div class="open-faq-body">Rent comps for the market, actual property tax and insurance quotes, realistic capex and vacancy rates for the asset class, and your final financing terms.</div>
+              </details>
+              <details class="open-faq-item">
+                <summary>Can I compare multiple properties?</summary>
+                <div class="open-faq-body">Yes. Save each analysis, then use the Compare feature to view two deals side by side. All saves are local to your device.</div>
+              </details>
+              <details class="open-faq-item">
+                <summary>Does it work offline?</summary>
+                <div class="open-faq-body">Yes. Add it to your home screen (PWA) and it works without a connection. The only feature that requires internet is the optional live mortgage rate fetch.</div>
+              </details>
+            </div>
+          </section>
+
+          <div class="open-final">
+            <div class="open-final-t">Run your next deal in minutes</div>
+            <p class="open-final-p">Get the dashboard, stress tests, and verdict — then refine with sliders.</p>
+            <button type="button" class="open-cta open-cta--final" onclick="startWizard()">Start analysis</button>
+            <div class="open-final-s">Free · No account · Private on your device</div>
+            <p class="open-final-disclaim">Calculator and screening tool only — not investment, tax, or legal advice. Verify all inputs before acting.</p>
+          </div>
+        </div>
+      </div>
+      <details class="open-foot-details">
+        <summary class="open-foot-summary">Data sources &amp; disclaimer</summary>
+        <p class="open-foot">
+          Rate &amp; expense defaults draw on
+          <a class="src-link" href="https://fred.stlouisfed.org/series/MORTGAGE30US" target="_blank" rel="noopener noreferrer">FRED</a>,
+          <a class="src-link" href="https://www.census.gov/programs-surveys/acs" target="_blank" rel="noopener noreferrer">ACS</a>, and
+          <a class="src-link" href="https://www.nj.gov/treasury/taxation/" target="_blank" rel="noopener noreferrer">NJ Treasury</a>
+          where applicable. Tax rate defaults vary by state — edit in the expenses step to match your property.
+          <span class="open-foot-disclaim">Not investment, tax, or legal advice. Verify material inputs.</span>
+        </p>
+      </details>
+      <div class="open-recent-outer" id="openRecent"></div>
+      <p class="open-site-credit">Built by <a href="https://www.linkedin.com/in/eli-merel/" target="_blank" rel="noopener noreferrer">Eli Merel</a></p>
+    </div>
+  </div>
+  <div id="wizard" class="screen">
+    <div class="prog" id="prog"></div>
+    <div class="wb" id="wb"></div>
+  </div>
+  <div id="results"></div>
+  <script>
+  // If opened as file://, ES modules are blocked by CORS and the app's JS never loads.
+  // Detect this and show a helpful banner instead of silently broken buttons.
+  if (location.protocol === 'file:') {
+    document.addEventListener('DOMContentLoaded', function(){
+      var b = document.createElement('div');
+      b.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.78);color:#fff;font:15px/1.5 system-ui,sans-serif;text-align:center';
+      b.innerHTML = '<div style="max-width:520px;background:#17171f;border:1px solid #22d46a;border-radius:14px;padding:28px">'
+        + '<div style="font-size:20px;font-weight:700;margin-bottom:10px;color:#22d46a">Please open via a local server</div>'
+        + '<p style="margin:0 0 14px">This app uses ES modules, which browsers block on <code style="background:#000;padding:2px 6px;border-radius:4px">file://</code> URLs. All buttons will appear dead.</p>'
+        + '<p style="margin:0 0 8px">In your terminal, run:</p>'
+        + '<pre style="background:#000;color:#22d46a;padding:12px;border-radius:8px;margin:0 0 14px;text-align:left;overflow:auto">python3 serve.py</pre>'
+        + '<p style="margin:0">Then open <a href="http://localhost:5173" style="color:#22d46a">http://localhost:5173</a> in your browser.</p>'
+        + '</div>';
+      document.body.appendChild(b);
+    });
+  }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
